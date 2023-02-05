@@ -29,7 +29,7 @@ class ElectronicBilling extends AfipWebService {
 	 * @param int $sales_point 	Sales point to ask for last voucher  
 	 * @param int $type 		Voucher type to ask for last voucher 
 	 *
-	 * @return int 
+	 * @return object 
 	 **/
 	public function GetLastVoucher($sales_point, $type)
 	{
@@ -38,7 +38,7 @@ class ElectronicBilling extends AfipWebService {
 			'CbteTipo' 	=> $type
 			);
 
-		return $this->ExecuteRequest('FECompUltimoAutorizado', $req)->CbteNro;
+		return $this->ExecuteRequest('FECompUltimoAutorizado', $req);
 	}
 
 	/**
@@ -61,7 +61,7 @@ class ElectronicBilling extends AfipWebService {
 	 * 	for CAE (yyyy-mm-dd)] else returns complete response from 
 	 * 	AFIP {@see WS Specification item 4.1.3}
 	**/
-	public function CreateVoucher($data, $return_response = FALSE)
+	public function CreateVoucher($data, $return_response = false)
 	{
 		$req = array(
 			'FeCAEReq' => array(
@@ -71,35 +71,35 @@ class ElectronicBilling extends AfipWebService {
 					'CbteTipo' 	=> $data['CbteTipo']
 					),
 				'FeDetReq' => array( 
-					'FECAEDetRequest' => &$data
+					'FECAEDetRequest' => null
 				)
 			)
 		);
 
-		unset($data['CantReg']);
-		unset($data['PtoVta']);
-		unset($data['CbteTipo']);
-
-		if (isset($data['Tributos'])) 
+		if (isset($data['Tributos'])){
 			$data['Tributos'] = array('Tributo' => $data['Tributos']);
+		}
 
-		if (isset($data['Iva'])) 
+		if (isset($data['Iva'])){
 			$data['Iva'] = array('AlicIva' => $data['Iva']);
+		}
 
-		if (isset($data['Opcionales'])) 
+		if (isset($data['Opcionales'])){
 			$data['Opcionales'] = array('Opcional' => $data['Opcionales']);
+		}
+
+		$req['FeCAEReq']['FeDetReq']['FECAEDetRequest'] = $data;
 
 		$results = $this->ExecuteRequest('FECAESolicitar', $req);
 
-		if ($return_response === TRUE) {
+		if ($return_response) {
 			return $results;
 		}
-		else{
-			return array(
-				'CAE' 		=> $results->FeDetResp->FECAEDetResponse->CAE,
-				'CAEFchVto' => $this->FormatDate($results->FeDetResp->FECAEDetResponse->CAEFchVto),
-			);
-		}
+
+		return array(
+			'CAE' 		=> $results->FeDetResp->FECAEDetResponse->CAE,
+			'CAEFchVto' => $this->FormatDate($results->FeDetResp->FECAEDetResponse->CAEFchVto),
+		);
 	}
 
 	/**

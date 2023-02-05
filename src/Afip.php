@@ -84,8 +84,11 @@ class Afip {
 		'RegisterScopeThirteen'
 	);
 
-	function __construct($options)
-	{
+	private ElectronicBilling $electronicBilling;
+
+	function __construct(
+        $options
+    ) {
 		ini_set("soap.wsdl_cache_enabled", "0");
 
 		if (!isset($options['CUIT'])) {
@@ -146,6 +149,9 @@ class Afip {
 			throw new Exception("Failed to open ".$this->PRIVATEKEY."\n", 2);
 		if (!file_exists($this->WSAA_WSDL)) 
 			throw new Exception("Failed to open ".$this->WSAA_WSDL."\n", 3);
+
+		require_once __DIR__.'/Class/ElectronicBilling.php';
+		$this->electronicBilling = new ElectronicBilling($this);
 	}
 
 	/**
@@ -280,6 +286,11 @@ class Afip {
 		} else {
 			return $this->{$property};
 		}
+	}
+
+	public function getElectronicBilling(): ElectronicBilling
+	{
+		return $this->electronicBilling;
 	}
 }
 
