@@ -149,7 +149,7 @@ class ElectronicBilling extends AfipWebService {
 	 * @param int $sales_point 	Sales point of voucher to get information
 	 * @param int $type 			Type of voucher to get information
 	 *
-	 * @return array|null returns array with complete voucher information 
+	 * @return object|null returns object with complete voucher information 
 	 * 	{@see WS Specification item 4.19} or null if there not exists 
 	**/
 	public function GetVoucherInfo($number, $sales_point, $type)
