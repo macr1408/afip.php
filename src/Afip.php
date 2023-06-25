@@ -70,6 +70,8 @@ class Afip {
 	 **/
 	var $CUIT;
 
+	var $options;
+
 	/**
 	 * Implemented Web Services
 	 *
@@ -90,12 +92,6 @@ class Afip {
         $options
     ) {
 		ini_set("soap.wsdl_cache_enabled", "0");
-
-		if (!isset($options['CUIT'])) {
-			throw new Exception("CUIT field is required in options array");
-		} else {
-			$this->CUIT = $options['CUIT'];
-		}
 
 		if (!isset($options['production'])) {
 			$options['production'] = FALSE;
@@ -133,8 +129,9 @@ class Afip {
 
 		$this->options = $options;
 
-		$this->CERT 		= $this->RES_FOLDER.$options['cert'];
-		$this->PRIVATEKEY 	= $this->RES_FOLDER.$options['key'];
+		$this->CUIT 		= null;
+		$this->CERT 		= null;
+		$this->PRIVATEKEY 	= null;
 
 		$this->WSAA_WSDL 	= __DIR__.'/Afip_res/'.'wsaa.wsdl';
 		if ($options['production'] === TRUE) {
@@ -143,15 +140,23 @@ class Afip {
 			$this->WSAA_URL = 'https://wsaahomo.afip.gov.ar/ws/services/LoginCms';
 		}
 
-		if (!file_exists($this->CERT)) 
-			throw new Exception("Failed to open ".$this->CERT."\n", 1);
-		if (!file_exists($this->PRIVATEKEY)) 
-			throw new Exception("Failed to open ".$this->PRIVATEKEY."\n", 2);
-		if (!file_exists($this->WSAA_WSDL)) 
+		if (!file_exists($this->WSAA_WSDL)){
 			throw new Exception("Failed to open ".$this->WSAA_WSDL."\n", 3);
+		}
 
 		require_once __DIR__.'/Class/ElectronicBilling.php';
 		$this->electronicBilling = new ElectronicBilling($this);
+	}
+
+	public function setCuit(string $cuit): void{
+		$this->CUIT = $cuit;
+		$this->options['CUIT'] = $cuit;
+
+		$this->CERT = $this->RES_FOLDER . `$cuit-cert`;
+		$this->options['cert'] = `$cuit-cert`;
+		
+		$this->PRIVATEKEY = $this->RES_FOLDER . `$cuit-key`;
+		$this->options['cert'] = `$cuit-key`;
 	}
 
 	/**
@@ -383,6 +388,8 @@ class AfipWebService
 	 * @var object
 	 **/
 	var $options;
+
+	var $soap_client;
 	
 	function __construct($afip, $options = array())
 	{
