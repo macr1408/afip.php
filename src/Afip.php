@@ -156,7 +156,7 @@ class Afip {
 		$this->options['cert'] = `$cuit-cert`;
 		
 		$this->PRIVATEKEY = $this->RES_FOLDER . `$cuit-key`;
-		$this->options['cert'] = `$cuit-key`;
+		$this->options['key'] = `$cuit-key`;
 	}
 
 	/**
