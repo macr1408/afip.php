@@ -50,13 +50,6 @@ class Afip {
 	var $PASSPHRASE;
 
 	/**
-	 * Afip resources folder
-	 *
-	 * @var string
-	 **/
-	var $RES_FOLDER;
-
-	/**
 	 * Afip ta folder
 	 *
 	 * @var string
@@ -113,12 +106,6 @@ class Afip {
 			$options['key'] = 'key';
 		}
 
-		if (!isset($options['res_folder'])) {
-			$this->RES_FOLDER = __DIR__.'/Afip_res/';
-		} else {
-			$this->RES_FOLDER = $options['res_folder'];
-		}
-
 		if (!isset($options['ta_folder'])) {
 			$this->TA_FOLDER = __DIR__.'/Afip_res/';
 		} else {
@@ -148,15 +135,15 @@ class Afip {
 		$this->electronicBilling = new ElectronicBilling($this);
 	}
 
-	public function setCuit(string $cuit): void{
+	public function setData(string $cuit, string $certPath, string $keyPath): void{
 		$this->CUIT = $cuit;
 		$this->options['CUIT'] = $cuit;
 
-		$this->CERT = $this->RES_FOLDER . sprintf('%s-cert', $cuit);
-		$this->options['cert'] = sprintf('%s-cert', $cuit);
+		$this->CERT = $certPath;
+		$this->options['cert'] = $certPath;
 		
-		$this->PRIVATEKEY = $this->RES_FOLDER . sprintf('%s-key', $cuit);
-		$this->options['key'] = sprintf('%s-key', $cuit);
+		$this->PRIVATEKEY = $keyPath;
+		$this->options['key'] = $keyPath;
 	}
 
 	/**
