@@ -1,289 +1,305 @@
 <?php
+
 /**
  * Software Development Kit for AFIP web services
- * 
- * This release of Afip SDK is intended to facilitate 
- * the integration to other different web services that 
- * Electronic Billing   
+ *
+ * This release of Afip SDK is intended to facilitate
+ * the integration to other different web services that
+ * Electronic Billing
  *
  * @link http://www.afip.gob.ar/ws/ AFIP Web Services documentation
  *
- * @author 	Afip SDK afipsdk@gmail.com
+ * @author  Afip SDK afipsdk@gmail.com
  * @package Afip
  * @version 0.6
  **/
 
-class Afip {
-	/**
-	 * File name for the WSDL corresponding to WSAA
-	 *
-	 * @var string
-	 **/
-	var $WSAA_WSDL;
+class Afip
+{
+    /**
+     * File name for the WSDL corresponding to WSAA
+     *
+     * @var string
+     **/
+    var $WSAA_WSDL;
 
-	/**
-	 * The url to get WSAA token
-	 *
-	 * @var string
-	 **/
-	var $WSAA_URL;
+    /**
+     * The url to get WSAA token
+     *
+     * @var string
+     **/
+    var $WSAA_URL;
 
-	/**
-	 * File name for the X.509 certificate in PEM format
-	 *
-	 * @var string
-	 **/
-	var $CERT;
+    /**
+     * File name for the X.509 certificate in PEM format
+     *
+     * @var string
+     **/
+    var $CERT;
 
-	/**
-	 * File name for the private key correspoding to CERT (PEM)
-	 *
-	 * @var string
-	 **/
-	var $PRIVATEKEY;
+    /**
+     * File name for the private key correspoding to CERT (PEM)
+     *
+     * @var string
+     **/
+    var $PRIVATEKEY;
 
-	/**
-	 * The passphrase (if any) to sign
-	 *
-	 * @var string
-	 **/
-	var $PASSPHRASE;
+    /**
+     * The passphrase (if any) to sign
+     *
+     * @var string
+     **/
+    var $PASSPHRASE;
 
-	/**
-	 * Afip ta folder
-	 *
-	 * @var string
-	 **/
-	var $TA_FOLDER;
+    /**
+     * Afip ta folder
+     *
+     * @var string
+     **/
+    var $TA_FOLDER;
 
-	/**
-	 * The CUIT to use
-	 *
-	 * @var int
-	 **/
-	var $CUIT;
+    /**
+     * The CUIT to use
+     *
+     * @var int
+     **/
+    var $CUIT;
 
-	var $options;
+    var $options;
 
-	/**
-	 * Implemented Web Services
-	 *
-	 * @var array[string]
-	 **/
-	var $implemented_ws = array(
-		'ElectronicBilling',
-		'RegisterScopeFour',
-		'RegisterScopeFive',
-		'RegisterInscriptionProof',
-		'RegisterScopeTen',
-		'RegisterScopeThirteen'
-	);
+    /**
+     * Implemented Web Services
+     *
+     * @var array[string]
+     **/
+    var $implemented_ws = array(
+        'ElectronicBilling',
+        'RegisterScopeFour',
+        'RegisterScopeFive',
+        'RegisterInscriptionProof',
+        'RegisterScopeTen',
+        'RegisterScopeThirteen'
+    );
 
-	private ElectronicBilling $electronicBilling;
+    private ElectronicBilling $electronicBilling;
 
-	function __construct(
+    function __construct(
         $options
     ) {
-		ini_set("soap.wsdl_cache_enabled", "0");
+        ini_set("soap.wsdl_cache_enabled", "0");
 
-		if (!isset($options['production'])) {
-			$options['production'] = FALSE;
-		}
+        if (!isset($options['production'])) {
+            $options['production'] = false;
+        }
 
-		if (!isset($options['passphrase'])) {
-			$options['passphrase'] = 'xxxxx';
-		}
+        if (!isset($options['passphrase'])) {
+            $options['passphrase'] = 'xxxxx';
+        }
 
-		if (!isset($options['exceptions'])) {
-			$options['exceptions'] = FALSE;
-		}
+        if (!isset($options['exceptions'])) {
+            $options['exceptions'] = false;
+        }
 
-		if (!isset($options['cert'])) {
-			$options['cert'] = 'cert';
-		}
+        if (!isset($options['cert'])) {
+            $options['cert'] = 'cert';
+        }
 
-		if (!isset($options['key'])) {
-			$options['key'] = 'key';
-		}
+        if (!isset($options['key'])) {
+            $options['key'] = 'key';
+        }
 
-		if (!isset($options['ta_folder'])) {
-			$this->TA_FOLDER = __DIR__.'/Afip_res/';
-		} else {
-			$this->TA_FOLDER = $options['ta_folder'];
-		}
+        if (!isset($options['ta_folder'])) {
+            $this->TA_FOLDER = __DIR__ . '/Afip_res/';
+        } else {
+            $this->TA_FOLDER = $options['ta_folder'];
+        }
 
-		$this->PASSPHRASE = $options['passphrase'];
+        $this->PASSPHRASE = $options['passphrase'];
 
-		$this->options = $options;
+        $this->options = $options;
 
-		$this->CUIT 		= null;
-		$this->CERT 		= null;
-		$this->PRIVATEKEY 	= null;
+        $this->CUIT         = null;
+        $this->CERT         = null;
+        $this->PRIVATEKEY   = null;
 
-		$this->WSAA_WSDL 	= __DIR__.'/Afip_res/'.'wsaa.wsdl';
-		if ($options['production'] === TRUE) {
-			$this->WSAA_URL = 'https://wsaa.afip.gov.ar/ws/services/LoginCms';
-		} else {
-			$this->WSAA_URL = 'https://wsaahomo.afip.gov.ar/ws/services/LoginCms';
-		}
+        $this->WSAA_WSDL    = __DIR__ . '/Afip_res/' . 'wsaa.wsdl';
+        if ($options['production'] === true) {
+            $this->WSAA_URL = 'https://wsaa.afip.gov.ar/ws/services/LoginCms';
+        } else {
+            $this->WSAA_URL = 'https://wsaahomo.afip.gov.ar/ws/services/LoginCms';
+        }
 
-		if (!file_exists($this->WSAA_WSDL)){
-			throw new Exception("Failed to open ".$this->WSAA_WSDL."\n", 3);
-		}
+        if (!file_exists($this->WSAA_WSDL)) {
+            throw new Exception("Failed to open " . $this->WSAA_WSDL . "\n", 3);
+        }
 
-		require_once __DIR__.'/Class/ElectronicBilling.php';
-		$this->electronicBilling = new ElectronicBilling($this);
-	}
+        require_once __DIR__ . '/Class/ElectronicBilling.php';
+        $this->electronicBilling = new ElectronicBilling($this);
+    }
 
-	public function setData(string $cuit, string $certPath, string $keyPath): void{
-		$this->CUIT = $cuit;
-		$this->options['CUIT'] = $cuit;
+    public function setData(string $cuit, string $certPath, string $keyPath): void
+    {
+        $this->CUIT = $cuit;
+        $this->options['CUIT'] = $cuit;
 
-		$this->CERT = $certPath;
-		$this->options['cert'] = $certPath;
-		
-		$this->PRIVATEKEY = $keyPath;
-		$this->options['key'] = $keyPath;
-	}
+        $this->CERT = $certPath;
+        $this->options['cert'] = $certPath;
 
-	/**
-	 * Gets token authorization for an AFIP Web Service
-	 *
-	 * @since 0.1
-	 *
-	 * @param string $service Service for token authorization
-	 *
-	 * @throws Exception if an error occurs
-	 *
-	 * @return TokenAuthorization Token Authorization for AFIP Web Service 
-	**/
-	public function GetServiceTA($service, $continue = TRUE)
-	{
-		if (file_exists($this->TA_FOLDER.'TA-'.$this->options['CUIT'].'-'.$service.($this->options['production'] === TRUE ? '-production' : '').'.xml')) {
-			$TA = new SimpleXMLElement(file_get_contents($this->TA_FOLDER.'TA-'.$this->options['CUIT'].'-'.$service.($this->options['production'] === TRUE ? '-production' : '').'.xml'));
+        $this->PRIVATEKEY = $keyPath;
+        $this->options['key'] = $keyPath;
+    }
 
-			$actual_time 		= new DateTime(date('c',date('U')+600));
-			$expiration_time 	= new DateTime($TA->header->expirationTime);
+    /**
+     * Gets token authorization for an AFIP Web Service
+     *
+     * @since 0.1
+     *
+     * @param string $service Service for token authorization
+     *
+     * @throws Exception if an error occurs
+     *
+     * @return TokenAuthorization Token Authorization for AFIP Web Service
+    **/
+    public function GetServiceTA($service, $continue = true)
+    {
+        if (file_exists($this->TA_FOLDER . 'TA-' . $this->options['CUIT'] . '-' . $service . ($this->options['production'] === true ? '-production' : '') . '.xml')) {
+            $TA = new SimpleXMLElement(file_get_contents($this->TA_FOLDER . 'TA-' . $this->options['CUIT'] . '-' . $service . ($this->options['production'] === true ? '-production' : '') . '.xml'));
 
-			if ($actual_time < $expiration_time) 
-				return new TokenAuthorization($TA->credentials->token, $TA->credentials->sign);
-			else if ($continue === FALSE)
-				throw new Exception("Error Getting TA", 5);
-		}
+            $actual_time        = new DateTime(date('c', date('U') + 600));
+            $expiration_time    = new DateTime($TA->header->expirationTime);
 
-		if ($this->CreateServiceTA($service)) 
-			return $this->GetServiceTA($service, FALSE);
-	}
+            if ($actual_time < $expiration_time) {
+                return new TokenAuthorization($TA->credentials->token, $TA->credentials->sign);
+            } elseif ($continue === false) {
+                throw new Exception("Error Getting TA", 5);
+            }
+        }
 
-	/**
-	 * Create an TA from WSAA
-	 *
-	 * Request to WSAA for a tokent authorization for service and save this
-	 * in a xml file
-	 *
-	 * @since 0.1
-	 *
-	 * @param string $service Service for token authorization
-	 *
-	 * @throws Exception if an error occurs creating token authorization
-	 *
-	 * @return true if token authorization is created success
-	**/
-	private function CreateServiceTA($service)
-	{
-		//Creating TRA
-		$TRA = new SimpleXMLElement(
-		'<?xml version="1.0" encoding="UTF-8"?>' .
-		'<loginTicketRequest version="1.0">'.
-		'</loginTicketRequest>');
-		$TRA->addChild('header');
-		$TRA->header->addChild('uniqueId',date('U'));
-		$TRA->header->addChild('generationTime',date('c',date('U')-600));
-		$TRA->header->addChild('expirationTime',date('c',date('U')+600));
-		$TRA->addChild('service',$service);
-		$TRA->asXML($this->TA_FOLDER.'TRA-'.$this->options['CUIT'].'-'.$service.'.xml');
+        if ($this->CreateServiceTA($service)) {
+            return $this->GetServiceTA($service, false);
+        }
+    }
 
-		//Signing TRA
-		$STATUS = openssl_pkcs7_sign($this->TA_FOLDER."TRA-".$this->options['CUIT'].'-'.$service.".xml", $this->TA_FOLDER."TRA-".$this->options['CUIT'].'-'.$service.".tmp", "file://".$this->CERT,
-			array("file://".$this->PRIVATEKEY, $this->PASSPHRASE),
-			array(),
-			!PKCS7_DETACHED
-		);
-		if (!$STATUS) {return FALSE;}
-		$inf = fopen($this->TA_FOLDER."TRA-".$this->options['CUIT'].'-'.$service.".tmp", "r");
-		$i = 0;
-		$CMS="";
-		while (!feof($inf)) {
-			$buffer=fgets($inf);
-			if ( $i++ >= 4 ) {$CMS.=$buffer;}
-		}
-		fclose($inf);
-		unlink($this->TA_FOLDER."TRA-".$this->options['CUIT'].'-'.$service.".xml");
-		unlink($this->TA_FOLDER."TRA-".$this->options['CUIT'].'-'.$service.".tmp");
+    /**
+     * Create an TA from WSAA
+     *
+     * Request to WSAA for a tokent authorization for service and save this
+     * in a xml file
+     *
+     * @since 0.1
+     *
+     * @param string $service Service for token authorization
+     *
+     * @throws Exception if an error occurs creating token authorization
+     *
+     * @return true if token authorization is created success
+    **/
+    private function CreateServiceTA($service)
+    {
+        //Creating TRA
+        $TRA = new SimpleXMLElement(
+            '<?xml version="1.0" encoding="UTF-8"?>' .
+            '<loginTicketRequest version="1.0">' .
+            '</loginTicketRequest>'
+        );
+        $TRA->addChild('header');
+        $TRA->header->addChild('uniqueId', date('U'));
+        $TRA->header->addChild('generationTime', date('c', date('U') - 600));
+        $TRA->header->addChild('expirationTime', date('c', date('U') + 600));
+        $TRA->addChild('service', $service);
+        $TRA->asXML($this->TA_FOLDER . 'TRA-' . $this->options['CUIT'] . '-' . $service . '.xml');
 
-		//Request TA to WSAA
-		$client = new SoapClient($this->WSAA_WSDL, array(
-			'soap_version'   => SOAP_1_2,
-			'location'       => $this->WSAA_URL,
-			'trace'          => 1,
-			'exceptions'     => $this->options['exceptions'],
-			'stream_context' => stream_context_create(['ssl'=> ['ciphers'=> 'AES256-SHA','verify_peer'=> false,'verify_peer_name'=> false]])
-		)); 
-		$results=$client->loginCms(array('in0'=>$CMS));
-		if (is_soap_fault($results)) 
-			throw new Exception("SOAP Fault: ".$results->faultcode."\n".$results->faultstring."\n", 4);
+        //Signing TRA
+        $STATUS = openssl_pkcs7_sign(
+            $this->TA_FOLDER . "TRA-" . $this->options['CUIT'] . '-' . $service . ".xml",
+            $this->TA_FOLDER . "TRA-" . $this->options['CUIT'] . '-' . $service . ".tmp",
+            "file://" . $this->CERT,
+            array("file://" . $this->PRIVATEKEY, $this->PASSPHRASE),
+            array(),
+            !PKCS7_DETACHED
+        );
+        if (!$STATUS) {
+            return false;
+        }
+        $inf = fopen($this->TA_FOLDER . "TRA-" . $this->options['CUIT'] . '-' . $service . ".tmp", "r");
+        $i = 0;
+        $CMS = "";
+        while (!feof($inf)) {
+            $buffer = fgets($inf);
+            if ($i++ >= 4) {
+                $CMS .= $buffer;
+            }
+        }
+        fclose($inf);
+        unlink($this->TA_FOLDER . "TRA-" . $this->options['CUIT'] . '-' . $service . ".xml");
+        unlink($this->TA_FOLDER . "TRA-" . $this->options['CUIT'] . '-' . $service . ".tmp");
 
-		$TA = $results->loginCmsReturn;
+        //Request TA to WSAA
+        $client = new SoapClient($this->WSAA_WSDL, array(
+            'soap_version'   => SOAP_1_2,
+            'location'       => $this->WSAA_URL,
+            'trace'          => 1,
+            'exceptions'     => $this->options['exceptions'],
+            'stream_context' => stream_context_create(['ssl' => ['ciphers' => 'AES256-SHA','verify_peer' => false,'verify_peer_name' => false]])
+        ));
+        $results = $client->loginCms(array('in0' => $CMS));
+        if (is_soap_fault($results)) {
+            throw new Exception("SOAP Fault: " . $results->faultcode . "\n" . $results->faultstring . "\n", 4);
+        }
 
-		if (file_put_contents($this->TA_FOLDER.'TA-'.$this->options['CUIT'].'-'.$service.($this->options['production'] === TRUE ? '-production' : '').'.xml', $TA)) 
-			return TRUE;
-		else
-			throw new Exception('Error writing "TA-'.$this->options['CUIT'].'-'.$service.'.xml"', 5);
-	}
+        $TA = $results->loginCmsReturn;
 
-	/**
-	 * Create generic Web Service
-	 * 
-	 * @since 0.6
-	 * 
-	 * @param string $service Web Service name
-	 * @param array $options Web Service options
-	 *
-	 * @throws Exception if an error occurs
-	 *
-	 * @return AfipWebService Token Authorization for AFIP Web Service 
-	 **/
-	public function WebService($service, $options)
-	{
-		$options['service'] = $service;
-		$options['generic'] = TRUE;
+        if (file_put_contents($this->TA_FOLDER . 'TA-' . $this->options['CUIT'] . '-' . $service . ($this->options['production'] === true ? '-production' : '') . '.xml', $TA)) {
+            return true;
+        } else {
+            throw new Exception('Error writing "TA-' . $this->options['CUIT'] . '-' . $service . '.xml"', 5);
+        }
+    }
 
-		return new AfipWebService($this, $options);
-	}
+    /**
+     * Create generic Web Service
+     *
+     * @since 0.6
+     *
+     * @param string $service Web Service name
+     * @param array $options Web Service options
+     *
+     * @throws Exception if an error occurs
+     *
+     * @return AfipWebService Token Authorization for AFIP Web Service
+     **/
+    public function WebService($service, $options)
+    {
+        $options['service'] = $service;
+        $options['generic'] = true;
 
-	public function __get($property)
-	{
-		if (in_array($property, $this->implemented_ws)) {
-			if (isset($this->{$property})) {
-				return $this->{$property};
-			} else {
-				$file = __DIR__.'/Class/'.$property.'.php';
-				if (!file_exists($file)) 
-					throw new Exception("Failed to open ".$file."\n", 1);
+        return new AfipWebService($this, $options);
+    }
 
-				include_once $file;
+    public function __get($property)
+    {
+        if (in_array($property, $this->implemented_ws)) {
+            if (isset($this->{$property})) {
+                return $this->{$property};
+            } else {
+                $file = __DIR__ . '/Class/' . $property . '.php';
+                if (!file_exists($file)) {
+                    throw new Exception("Failed to open " . $file . "\n", 1);
+                }
 
-				return ($this->{$property} = new $property($this));
-			}
-		} else {
-			return $this->{$property};
-		}
-	}
+                include_once $file;
 
-	public function getElectronicBilling(): ElectronicBilling
-	{
-		return $this->electronicBilling;
-	}
+                return ($this->{$property} = new $property($this));
+            }
+        } else {
+            return $this->{$property};
+        }
+    }
+
+    public function getElectronicBilling(): ElectronicBilling
+    {
+        return $this->electronicBilling;
+    }
 }
 
 /**
@@ -292,203 +308,205 @@ class Afip {
  * @since 0.1
  *
  * @package Afip
- * @author 	Afip SDK afipsdk@gmail.com
+ * @author  Afip SDK afipsdk@gmail.com
  **/
-class TokenAuthorization {
-	/**
-	 * Authorization and authentication web service Token
-	 *
-	 * @var string
-	 **/
-	var $token;
+class TokenAuthorization
+{
+    /**
+     * Authorization and authentication web service Token
+     *
+     * @var string
+     **/
+    var $token;
 
-	/**
-	 * Authorization and authentication web service Sign
-	 *
-	 * @var string
-	 **/
-	var $sign;
+    /**
+     * Authorization and authentication web service Sign
+     *
+     * @var string
+     **/
+    var $sign;
 
-	function __construct($token, $sign)
-	{
-		$this->token 	= $token;
-		$this->sign 	= $sign;
-	}
+    function __construct($token, $sign)
+    {
+        $this->token    = $token;
+        $this->sign     = $sign;
+    }
 }
 
 /**
- * Base class for AFIP web services 
+ * Base class for AFIP web services
  *
  * @since 0.6
  *
  * @package Afip
- * @author 	Afip SDK afipsdk@gmail.com
+ * @author  Afip SDK afipsdk@gmail.com
 **/
 class AfipWebService
 {
-	/**
-	 * Web service SOAP version
-	 *
-	 * @var intenger
-	 **/
-	var $soap_version;
+    /**
+     * Web service SOAP version
+     *
+     * @var intenger
+     **/
+    var $soap_version;
 
-	/**
-	 * File name for the Web Services Description Language
-	 *
-	 * @var string
-	 **/
-	var $WSDL;
-	
-	/**
-	 * The url to web service
-	 *
-	 * @var string
-	 **/
-	var $URL;
+    /**
+     * File name for the Web Services Description Language
+     *
+     * @var string
+     **/
+    var $WSDL;
 
-	/**
-	 * File name for the Web Services Description 
-	 * Language in test mode
-	 *
-	 * @var string
-	 **/
-	var $WSDL_TEST;
+    /**
+     * The url to web service
+     *
+     * @var string
+     **/
+    var $URL;
 
-	/**
-	 * The url to web service in test mode
-	 *
-	 * @var string
-	 **/
-	var $URL_TEST;
-	
-	/**
-	 * The Afip parent Class
-	 *
-	 * @var Afip
-	 **/
-	var $afip;
-	
-	/**
-	 * Class options
-	 *
-	 * @var object
-	 **/
-	var $options;
+    /**
+     * File name for the Web Services Description
+     * Language in test mode
+     *
+     * @var string
+     **/
+    var $WSDL_TEST;
 
-	var $soap_client;
-	
-	function __construct($afip, $options = array())
-	{
-		$this->afip = $afip;
-		$this->options = $options;
+    /**
+     * The url to web service in test mode
+     *
+     * @var string
+     **/
+    var $URL_TEST;
 
-		if (isset($options['generic']) && $options['generic'] === TRUE) {
-			if (!isset($options['WSDL'])) {
-				throw new Exception("WSDL field is required in options");
-			}
+    /**
+     * The Afip parent Class
+     *
+     * @var Afip
+     **/
+    var $afip;
 
-			if (!isset($options['URL'])) {
-				throw new Exception("URL field is required in options");
-			}
+    /**
+     * Class options
+     *
+     * @var object
+     **/
+    var $options;
 
-			if (!isset($options['WSDL_TEST'])) {
-				throw new Exception("WSDL_TEST field is required in options");
-			}
+    var $soap_client;
 
-			if (!isset($options['URL_TEST'])) {
-				throw new Exception("URL_TEST field is required in options");
-			}
+    function __construct($afip, $options = array())
+    {
+        $this->afip = $afip;
+        $this->options = $options;
 
-			if (!isset($options['service'])) {
-				throw new Exception("service field is required in options");
-			}
+        if (isset($options['generic']) && $options['generic'] === true) {
+            if (!isset($options['WSDL'])) {
+                throw new Exception("WSDL field is required in options");
+            }
 
-			if ($this->afip->options['production'] === TRUE) {
-				$this->WSDL = $options['WSDL'];
-				$this->URL 	= $options['URL'];
-			} else {
-				$this->WSDL = $options['WSDL_TEST'];
-				$this->URL 	= $options['URL_TEST'];
-			}
+            if (!isset($options['URL'])) {
+                throw new Exception("URL field is required in options");
+            }
 
-			if (!isset($options['soap_version'])) {
-				$options['soap_version'] = SOAP_1_2;
-			}
+            if (!isset($options['WSDL_TEST'])) {
+                throw new Exception("WSDL_TEST field is required in options");
+            }
 
-			$this->soap_version = $options['soap_version'];
-		}
-		else {
-			if ($this->afip->options['production'] === TRUE) {
-				$this->WSDL = __DIR__.'/Afip_res/'.$this->WSDL;
-			} else {
-				$this->WSDL = __DIR__.'/Afip_res/'.$this->WSDL_TEST;
-				$this->URL 	= $this->URL_TEST;
-			}
-		}
+            if (!isset($options['URL_TEST'])) {
+                throw new Exception("URL_TEST field is required in options");
+            }
 
-		if (!file_exists($this->WSDL)) 
-			throw new Exception("Failed to open ".$this->WSDL."\n", 3);
-	}
+            if (!isset($options['service'])) {
+                throw new Exception("service field is required in options");
+            }
 
-	/**
-	 * Get Web Service Token Authorization from WSAA
-	 * 
-	 * @since 0.6
-	 *
-	 * @throws Exception if an error occurs
-	 *
-	 * @return TokenAuthorization Token Authorization for AFIP Web Service 
-	 **/
-	public function GetTokenAuthorization()
-	{
-		return $this->afip->GetServiceTA($this->options['service']);
-	}
+            if ($this->afip->options['production'] === true) {
+                $this->WSDL = $options['WSDL'];
+                $this->URL  = $options['URL'];
+            } else {
+                $this->WSDL = $options['WSDL_TEST'];
+                $this->URL  = $options['URL_TEST'];
+            }
 
-	/**
-	 * Sends request to AFIP servers
-	 * 
-	 * @since 0.6
-	 *
-	 * @param string 	$operation 	SOAP operation to do 
-	 * @param array 	$params 	Parameters to send
-	 *
-	 * @return mixed Operation results 
-	 **/
-	public function ExecuteRequest($operation, $params = array())
-	{
-		if (!isset($this->soap_client)) {
-			$this->soap_client = new SoapClient($this->WSDL, array(
-				'soap_version'   => $this->soap_version,
-				'location'       => $this->URL,
-				'trace'          => 1,
-				'exceptions'     => $this->afip->options['exceptions'],
-				'stream_context' => stream_context_create(['ssl'=> ['ciphers'=> 'AES256-SHA','verify_peer'=> false,'verify_peer_name'=> false]])
-			));
-		}
+            if (!isset($options['soap_version'])) {
+                $options['soap_version'] = SOAP_1_2;
+            }
 
-		$results = $this->soap_client->{$operation}($params);
+            $this->soap_version = $options['soap_version'];
+        } else {
+            if ($this->afip->options['production'] === true) {
+                $this->WSDL = __DIR__ . '/Afip_res/' . $this->WSDL;
+            } else {
+                $this->WSDL = __DIR__ . '/Afip_res/' . $this->WSDL_TEST;
+                $this->URL  = $this->URL_TEST;
+            }
+        }
 
-		$this->_CheckErrors($operation, $results);
-		
-		return $results;
-	}
+        if (!file_exists($this->WSDL)) {
+            throw new Exception("Failed to open " . $this->WSDL . "\n", 3);
+        }
+    }
 
-	/**
-	 * Check if occurs an error on Web Service request
-	 * 
-	 * @since 0.6
-	 *
-	 * @param string 	$operation 	SOAP operation to check 
-	 * @param mixed 	$results 	AFIP response
-	 *
-	 * @throws Exception if exists an error in response 
-	 * 
-	 * @return void 
-	 **/
-	private function _CheckErrors($operation, $results)
-	{
-		if (is_soap_fault($results)) 
-			throw new Exception("SOAP Fault: ".$results->faultcode."\n".$results->faultstring."\n", 4);
-	}
+    /**
+     * Get Web Service Token Authorization from WSAA
+     *
+     * @since 0.6
+     *
+     * @throws Exception if an error occurs
+     *
+     * @return TokenAuthorization Token Authorization for AFIP Web Service
+     **/
+    public function GetTokenAuthorization()
+    {
+        return $this->afip->GetServiceTA($this->options['service']);
+    }
+
+    /**
+     * Sends request to AFIP servers
+     *
+     * @since 0.6
+     *
+     * @param string    $operation  SOAP operation to do
+     * @param array     $params     Parameters to send
+     *
+     * @return mixed Operation results
+     **/
+    public function ExecuteRequest($operation, $params = array())
+    {
+        if (!isset($this->soap_client)) {
+            $this->soap_client = new SoapClient($this->WSDL, array(
+                'soap_version'   => $this->soap_version,
+                'location'       => $this->URL,
+                'trace'          => 1,
+                'exceptions'     => $this->afip->options['exceptions'],
+                'stream_context' => stream_context_create(['ssl' => ['ciphers' => 'AES256-SHA','verify_peer' => false,'verify_peer_name' => false]])
+            ));
+        }
+
+        $results = $this->soap_client->{$operation}($params);
+
+        $this->_CheckErrors($operation, $results);
+
+        return $results;
+    }
+
+    /**
+     * Check if occurs an error on Web Service request
+     *
+     * @since 0.6
+     *
+     * @param string    $operation  SOAP operation to check
+     * @param mixed     $results    AFIP response
+     *
+     * @throws Exception if exists an error in response
+     *
+     * @return void
+     **/
+    private function _CheckErrors($operation, $results)
+    {
+        if (is_soap_fault($results)) {
+            throw new Exception("SOAP Fault: " . $results->faultcode . "\n" . $results->faultstring . "\n", 4);
+        }
+    }
 }

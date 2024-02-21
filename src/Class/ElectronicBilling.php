@@ -1,387 +1,413 @@
 <?php
+
 /**
  * SDK for AFIP Electronic Billing (wsfe1)
- * 
+ *
  * @link http://www.afip.gob.ar/fe/documentos/manual_desarrollador_COMPG_v2_10.pdf WS Specification
  *
- * @author 	Afip SDK
+ * @author  Afip SDK
  * @package Afip
  * @version 0.7
  **/
 
-class ElectronicBilling extends AfipWebService {
+class ElectronicBilling extends AfipWebService
+{
+    var $soap_version   = SOAP_1_2;
+    var $WSDL           = 'wsfe-production.wsdl';
+    var $URL            = 'https://servicios1.afip.gov.ar/wsfev1/service.asmx';
+    var $WSDL_TEST      = 'wsfe.wsdl';
+    var $URL_TEST       = 'https://wswhomo.afip.gov.ar/wsfev1/service.asmx';
 
-	var $soap_version 	= SOAP_1_2;
-	var $WSDL 			= 'wsfe-production.wsdl';
-	var $URL 			= 'https://servicios1.afip.gov.ar/wsfev1/service.asmx';
-	var $WSDL_TEST 		= 'wsfe.wsdl';
-	var $URL_TEST 		= 'https://wswhomo.afip.gov.ar/wsfev1/service.asmx';
+    /**
+     * Gets last voucher number
+     *
+     * Asks to Afip servers for number of the last voucher created for
+     * certain sales point and voucher type {@see WS Specification
+     * item 4.15}
+     *
+     * @since 0.7
+     *
+     * @param int $sales_point  Sales point to ask for last voucher
+     * @param int $type         Voucher type to ask for last voucher
+     *
+     * @return object
+     **/
+    public function GetLastVoucher($sales_point, $type)
+    {
+        $req = array(
+            'PtoVta'    => $sales_point,
+            'CbteTipo'  => $type
+            );
 
-	/**
-	 * Gets last voucher number 
-	 * 
-	 * Asks to Afip servers for number of the last voucher created for
-	 * certain sales point and voucher type {@see WS Specification 
-	 * item 4.15} 
-	 *
-	 * @since 0.7
-	 *
-	 * @param int $sales_point 	Sales point to ask for last voucher  
-	 * @param int $type 		Voucher type to ask for last voucher 
-	 *
-	 * @return object 
-	 **/
-	public function GetLastVoucher($sales_point, $type)
-	{
-		$req = array(
-			'PtoVta' 	=> $sales_point,
-			'CbteTipo' 	=> $type
-			);
+        return $this->ExecuteRequest('FECompUltimoAutorizado', $req);
+    }
 
-		return $this->ExecuteRequest('FECompUltimoAutorizado', $req);
-	}
+    /**
+     * @return object
+     */
+    public function getVouchers(string $period, int $order)
+    {
+        $req = array(
+            'Periodo'    => $period,
+            'Orden'  => $order
+            );
 
-	/**
-	 * Create a voucher from AFIP
-	 *
-	 * Send to AFIP servers request for create a voucher and assign 
-	 * CAE to them {@see WS Specification item 4.1}
-	 * 
-	 * @since 0.7
-	 *
-	 * @param array $data Voucher parameters {@see WS Specification 
-	 * 	item 4.1.3}, some arrays were simplified for easy use {@example 
-	 * 	examples/CreateVoucher.php Example with all allowed
-	 * 	 attributes}
-	 * @param bool $return_response if is TRUE returns complete response  
-	 * 	from AFIP
-	 * 
-	 * @return array if $return_response is set to FALSE returns 
-	 * 	[CAE => CAE assigned to voucher, CAEFchVto => Expiration date 
-	 * 	for CAE (yyyy-mm-dd)] else returns complete response from 
-	 * 	AFIP {@see WS Specification item 4.1.3}
-	**/
-	public function CreateVoucher($data, $return_response = false)
-	{
-		$req = array(
-			'FeCAEReq' => array(
-				'FeCabReq' => array(
-					'CantReg' 	=> $data['CbteHasta']-$data['CbteDesde']+1,
-					'PtoVta' 	=> $data['PtoVta'],
-					'CbteTipo' 	=> $data['CbteTipo']
-					),
-				'FeDetReq' => array( 
-					'FECAEDetRequest' => null
-				)
-			)
-		);
+        return $this->ExecuteRequest('FECAEAConsultar', $req);
+    }
 
-		if (isset($data['Tributos'])){
-			$data['Tributos'] = array('Tributo' => $data['Tributos']);
-		}
+    public function getAuthToken(): array
+    {
+        $ta = $this->afip->GetServiceTA('wsfe');
 
-		if (isset($data['Iva'])){
-			$data['Iva'] = array('AlicIva' => $data['Iva']);
-		}
+        return array(
+            'Auth' => array(
+                'Token' => $ta->token,
+                'Sign'  => $ta->sign,
+                'Cuit'  => $this->afip->CUIT
+                )
+        );
+    }
 
-		if (isset($data['Opcionales'])){
-			$data['Opcionales'] = array('Opcional' => $data['Opcionales']);
-		}
+    /**
+     * Create a voucher from AFIP
+     *
+     * Send to AFIP servers request for create a voucher and assign
+     * CAE to them {@see WS Specification item 4.1}
+     *
+     * @since 0.7
+     *
+     * @param array $data Voucher parameters {@see WS Specification
+     *  item 4.1.3}, some arrays were simplified for easy use {@example
+     *  examples/CreateVoucher.php Example with all allowed
+     *   attributes}
+     * @param bool $return_response if is TRUE returns complete response
+     *  from AFIP
+     *
+     * @return array if $return_response is set to FALSE returns
+     *  [CAE => CAE assigned to voucher, CAEFchVto => Expiration date
+     *  for CAE (yyyy-mm-dd)] else returns complete response from
+     *  AFIP {@see WS Specification item 4.1.3}
+    **/
+    public function CreateVoucher($data, $return_response = false)
+    {
+        $req = array(
+            'FeCAEReq' => array(
+                'FeCabReq' => array(
+                    'CantReg'   => $data['CbteHasta'] - $data['CbteDesde'] + 1,
+                    'PtoVta'    => $data['PtoVta'],
+                    'CbteTipo'  => $data['CbteTipo']
+                    ),
+                'FeDetReq' => array(
+                    'FECAEDetRequest' => null
+                )
+            )
+        );
 
-		$req['FeCAEReq']['FeDetReq']['FECAEDetRequest'] = $data;
+        if (isset($data['Tributos'])) {
+            $data['Tributos'] = array('Tributo' => $data['Tributos']);
+        }
 
-		$results = $this->ExecuteRequest('FECAESolicitar', $req);
+        if (isset($data['Iva'])) {
+            $data['Iva'] = array('AlicIva' => $data['Iva']);
+        }
 
-		if ($return_response) {
-			return $results;
-		}
+        if (isset($data['Opcionales'])) {
+            $data['Opcionales'] = array('Opcional' => $data['Opcionales']);
+        }
 
-		return array(
-			'CAE' 		=> $results->FeDetResp->FECAEDetResponse->CAE,
-			'CAEFchVto' => $this->FormatDate($results->FeDetResp->FECAEDetResponse->CAEFchVto),
-		);
-	}
+        $req['FeCAEReq']['FeDetReq']['FECAEDetRequest'] = $data;
 
-	/**
-	 * Create next voucher from AFIP
-	 *
-	 * This method combines Afip::GetLastVoucher and Afip::CreateVoucher
-	 * for create the next voucher
-	 *
-	 * @since 0.7
-	 *
-	 * @param array $data Same to $data in Afip::CreateVoucher except that
-	 * 	don't need CbteDesde and CbteHasta attributes
-	 * 
-	 * @param bool $return_response if is TRUE returns complete response  
-	 * 	from AFIP
-	 *
-	 * @return array if $return_response is set to false returns 
-	 * [CAE => CAE assigned to voucher, CAEFchVto => Expiration 
-	 * 	date for CAE (yyyy-mm-dd), voucher_number => Number assigned to 
-	 * 	voucher] else returns the complete response (same as in method CreateVoucher)
-	 *  and the voucher_number
-	**/
-	public function CreateNextVoucher($data, $return_response = FALSE)
-	{
-		$last_voucher = $this->GetLastVoucher($data['PtoVta'], $data['CbteTipo']);
-		
-		$voucher_number = $last_voucher+1;
+        $results = $this->ExecuteRequest('FECAESolicitar', $req);
 
-		$data['CbteDesde'] = $voucher_number;
-		$data['CbteHasta'] = $voucher_number;
-		
-		$res                   = $this->CreateVoucher($data, $return_response);
-		$res['voucher_number'] = $voucher_number;
+        if ($return_response) {
+            return $results;
+        }
 
-		return $res;
-	}
+        return array(
+            'CAE'       => $results->FeDetResp->FECAEDetResponse->CAE,
+            'CAEFchVto' => $this->FormatDate($results->FeDetResp->FECAEDetResponse->CAEFchVto),
+        );
+    }
 
-	/**
-	 * Get complete voucher information
-	 *
-	 * Asks to AFIP servers for complete information of voucher {@see WS 
-	 * Specification item 4.19}
-	 *
-	 * @since 0.7
-	 *
-	 * @param int $number 		Number of voucher to get information
-	 * @param int $sales_point 	Sales point of voucher to get information
-	 * @param int $type 			Type of voucher to get information
-	 *
-	 * @return object|null returns object with complete voucher information 
-	 * 	{@see WS Specification item 4.19} or null if there not exists 
-	**/
-	public function GetVoucherInfo($number, $sales_point, $type)
-	{
-		$req = array(
-			'FeCompConsReq' => array(
-				'CbteNro' 	=> $number,
-				'PtoVta' 	=> $sales_point,
-				'CbteTipo' 	=> $type
-			)
-		);
+    /**
+     * Create next voucher from AFIP
+     *
+     * This method combines Afip::GetLastVoucher and Afip::CreateVoucher
+     * for create the next voucher
+     *
+     * @since 0.7
+     *
+     * @param array $data Same to $data in Afip::CreateVoucher except that
+     *  don't need CbteDesde and CbteHasta attributes
+     *
+     * @param bool $return_response if is TRUE returns complete response
+     *  from AFIP
+     *
+     * @return array if $return_response is set to false returns
+     * [CAE => CAE assigned to voucher, CAEFchVto => Expiration
+     *  date for CAE (yyyy-mm-dd), voucher_number => Number assigned to
+     *  voucher] else returns the complete response (same as in method CreateVoucher)
+     *  and the voucher_number
+    **/
+    public function CreateNextVoucher($data, $return_response = false)
+    {
+        $last_voucher = $this->GetLastVoucher($data['PtoVta'], $data['CbteTipo']);
 
-		try {
-			$result = $this->ExecuteRequest('FECompConsultar', $req);
-		} catch (Exception $e) {
-			if ($e->getCode() == 602) 
-				return NULL;
-			else
-				throw $e;
-		}
+        $voucher_number = $last_voucher + 1;
 
-		return $result->ResultGet;
-	}
+        $data['CbteDesde'] = $voucher_number;
+        $data['CbteHasta'] = $voucher_number;
 
-	/**
-	 * Asks to AFIP Servers for sales points availables {@see WS 
-	 * Specification item 4.11}
-	 *
-	 * @return array All sales points availables
-	**/
-	public function GetSalesPoints()
-	{
-		return $this->ExecuteRequest('FEParamGetPtosVenta')->ResultGet->PtoVenta;
-	}
+        $res                   = $this->CreateVoucher($data, $return_response);
+        $res['voucher_number'] = $voucher_number;
 
-	/**
-	 * Asks to AFIP Servers for voucher types availables {@see WS 
-	 * Specification item 4.4}
-	 *
-	 * @since 0.7
-	 *
-	 * @return array All voucher types availables
-	**/
-	public function GetVoucherTypes()
-	{
-		return $this->ExecuteRequest('FEParamGetTiposCbte')->ResultGet->CbteTipo;
-	}
+        return $res;
+    }
 
-	/**
-	 * Asks to AFIP Servers for voucher concepts availables {@see WS 
-	 * Specification item 4.5}
-	 *
-	 * @since 0.7
-	 *
-	 * @return array All voucher concepts availables
-	**/
-	public function GetConceptTypes()
-	{
-		return $this->ExecuteRequest('FEParamGetTiposConcepto')->ResultGet->ConceptoTipo;
-	}
+    /**
+     * Get complete voucher information
+     *
+     * Asks to AFIP servers for complete information of voucher {@see WS
+     * Specification item 4.19}
+     *
+     * @since 0.7
+     *
+     * @param int $number       Number of voucher to get information
+     * @param int $sales_point  Sales point of voucher to get information
+     * @param int $type             Type of voucher to get information
+     *
+     * @return object|null returns object with complete voucher information
+     *  {@see WS Specification item 4.19} or null if there not exists
+    **/
+    public function GetVoucherInfo($number, $sales_point, $type)
+    {
+        $req = array(
+            'FeCompConsReq' => array(
+                'CbteNro'   => $number,
+                'PtoVta'    => $sales_point,
+                'CbteTipo'  => $type
+            )
+        );
 
-	/**
-	 * Asks to AFIP Servers for document types availables {@see WS 
-	 * Specification item 4.6}
-	 *
-	 * @since 0.7
-	 *
-	 * @return array All document types availables
-	**/
-	public function GetDocumentTypes()
-	{
-		return $this->ExecuteRequest('FEParamGetTiposDoc')->ResultGet->DocTipo;
-	}
+        try {
+            $result = $this->ExecuteRequest('FECompConsultar', $req);
+        } catch (Exception $e) {
+            if ($e->getCode() == 602) {
+                return null;
+            } else {
+                throw $e;
+            }
+        }
 
-	/**
-	 * Asks to AFIP Servers for aliquot availables {@see WS 
-	 * Specification item 4.7}
-	 *
-	 * @since 0.7
-	 *
-	 * @return array All aliquot availables
-	**/
-	public function GetAliquotTypes()
-	{
-		return $this->ExecuteRequest('FEParamGetTiposIva')->ResultGet->IvaTipo;
-	}
+        return $result->ResultGet;
+    }
 
-	/**
-	 * Asks to AFIP Servers for currencies availables {@see WS 
-	 * Specification item 4.8}
-	 *
-	 * @since 0.7
-	 *
-	 * @return array All currencies availables
-	**/
-	public function GetCurrenciesTypes()
-	{
-		return $this->ExecuteRequest('FEParamGetTiposMonedas')->ResultGet->Moneda;
-	}
+    /**
+     * Asks to AFIP Servers for sales points availables {@see WS
+     * Specification item 4.11}
+     *
+     * @return array All sales points availables
+    **/
+    public function GetSalesPoints()
+    {
+        return $this->ExecuteRequest('FEParamGetPtosVenta')->ResultGet->PtoVenta;
+    }
 
-	/**
-	 * Asks to AFIP Servers for voucher optional data available {@see WS 
-	 * Specification item 4.9}
-	 *
-	 * @since 0.7
-	 *
-	 * @return array All voucher optional data available
-	**/
-	public function GetOptionsTypes()
-	{
-		return $this->ExecuteRequest('FEParamGetTiposOpcional')->ResultGet->OpcionalTipo;
-	}
+    /**
+     * Asks to AFIP Servers for voucher types availables {@see WS
+     * Specification item 4.4}
+     *
+     * @since 0.7
+     *
+     * @return array All voucher types availables
+    **/
+    public function GetVoucherTypes()
+    {
+        return $this->ExecuteRequest('FEParamGetTiposCbte')->ResultGet->CbteTipo;
+    }
 
-	/**
-	 * Asks to AFIP Servers for tax availables {@see WS 
-	 * Specification item 4.10}
-	 *
-	 * @since 0.7
-	 *
-	 * @return array All tax availables
-	**/
-	public function GetTaxTypes()
-	{
-		return $this->ExecuteRequest('FEParamGetTiposTributos')->ResultGet->TributoTipo;
-	}
+    /**
+     * Asks to AFIP Servers for voucher concepts availables {@see WS
+     * Specification item 4.5}
+     *
+     * @since 0.7
+     *
+     * @return array All voucher concepts availables
+    **/
+    public function GetConceptTypes()
+    {
+        return $this->ExecuteRequest('FEParamGetTiposConcepto')->ResultGet->ConceptoTipo;
+    }
 
-	/**
-	 * Asks to web service for servers status {@see WS 
-	 * Specification item 4.14}
-	 *
-	 * @since 0.7
-	 *
-	 * @return object { AppServer => Web Service status, 
-	 * DbServer => Database status, AuthServer => Autentication 
-	 * server status}
-	**/
-	public function GetServerStatus()
-	{
-		return $this->ExecuteRequest('FEDummy');
-	}
+    /**
+     * Asks to AFIP Servers for document types availables {@see WS
+     * Specification item 4.6}
+     *
+     * @since 0.7
+     *
+     * @return array All document types availables
+    **/
+    public function GetDocumentTypes()
+    {
+        return $this->ExecuteRequest('FEParamGetTiposDoc')->ResultGet->DocTipo;
+    }
 
-	/**
-	 * Change date from AFIP used format (yyyymmdd) to yyyy-mm-dd
-	 *
-	 * @since 0.7
-	 *
-	 * @param string|int date to format
-	 *
-	 * @return string date in format yyyy-mm-dd
-	**/
-	public function FormatDate($date)
-	{
-		return date_format(DateTime::CreateFromFormat('Ymd', $date.''), 'Y-m-d');
-	}
+    /**
+     * Asks to AFIP Servers for aliquot availables {@see WS
+     * Specification item 4.7}
+     *
+     * @since 0.7
+     *
+     * @return array All aliquot availables
+    **/
+    public function GetAliquotTypes()
+    {
+        return $this->ExecuteRequest('FEParamGetTiposIva')->ResultGet->IvaTipo;
+    }
 
-	/**
-	 * Sends request to AFIP servers
-	 * 
-	 * @since 0.7
-	 *
-	 * @param string 	$operation 	SOAP operation to do 
-	 * @param array 	$params 	Parameters to send
-	 *
-	 * @return mixed Operation results 
-	 **/
-	public function ExecuteRequest($operation, $params = array())
-	{
-		$this->options = array('service' => 'wsfe');
+    /**
+     * Asks to AFIP Servers for currencies availables {@see WS
+     * Specification item 4.8}
+     *
+     * @since 0.7
+     *
+     * @return array All currencies availables
+    **/
+    public function GetCurrenciesTypes()
+    {
+        return $this->ExecuteRequest('FEParamGetTiposMonedas')->ResultGet->Moneda;
+    }
 
-		$params = array_replace($this->GetWSInitialRequest($operation), $params); 
+    /**
+     * Asks to AFIP Servers for voucher optional data available {@see WS
+     * Specification item 4.9}
+     *
+     * @since 0.7
+     *
+     * @return array All voucher optional data available
+    **/
+    public function GetOptionsTypes()
+    {
+        return $this->ExecuteRequest('FEParamGetTiposOpcional')->ResultGet->OpcionalTipo;
+    }
 
-		$results = parent::ExecuteRequest($operation, $params);
+    /**
+     * Asks to AFIP Servers for tax availables {@see WS
+     * Specification item 4.10}
+     *
+     * @since 0.7
+     *
+     * @return array All tax availables
+    **/
+    public function GetTaxTypes()
+    {
+        return $this->ExecuteRequest('FEParamGetTiposTributos')->ResultGet->TributoTipo;
+    }
 
-		$this->_CheckErrors($operation, $results);
+    /**
+     * Asks to web service for servers status {@see WS
+     * Specification item 4.14}
+     *
+     * @since 0.7
+     *
+     * @return object { AppServer => Web Service status,
+     * DbServer => Database status, AuthServer => Autentication
+     * server status}
+    **/
+    public function GetServerStatus()
+    {
+        return $this->ExecuteRequest('FEDummy');
+    }
 
-		return $results->{$operation.'Result'};
-	}
+    /**
+     * Change date from AFIP used format (yyyymmdd) to yyyy-mm-dd
+     *
+     * @since 0.7
+     *
+     * @param string|int date to format
+     *
+     * @return string date in format yyyy-mm-dd
+    **/
+    public function FormatDate($date)
+    {
+        return date_format(DateTime::CreateFromFormat('Ymd', $date . ''), 'Y-m-d');
+    }
 
-	/**
-	 * Make default request parameters for most of the operations
-	 * 
-	 * @since 0.7
-	 *
-	 * @param string $operation SOAP Operation to do 
-	 *
-	 * @return array Request parameters  
-	 **/
-	private function GetWSInitialRequest($operation)
-	{
-		if ($operation == 'FEDummy') {
-			return array();
-		}
+    /**
+     * Sends request to AFIP servers
+     *
+     * @since 0.7
+     *
+     * @param string    $operation  SOAP operation to do
+     * @param array     $params     Parameters to send
+     *
+     * @return mixed Operation results
+     **/
+    public function ExecuteRequest($operation, $params = array())
+    {
+        $this->options = array('service' => 'wsfe');
 
-		$ta = $this->afip->GetServiceTA('wsfe');
+        $params = array_replace($this->GetWSInitialRequest($operation), $params);
 
-		return array(
-			'Auth' => array( 
-				'Token' => $ta->token,
-				'Sign' 	=> $ta->sign,
-				'Cuit' 	=> $this->afip->CUIT
-				)
-		);
-	}
+        $results = parent::ExecuteRequest($operation, $params);
 
-	/**
-	 * Check if occurs an error on Web Service request
-	 * 
-	 * @since 0.7
-	 *
-	 * @param string 	$operation 	SOAP operation to check 
-	 * @param mixed 	$results 	AFIP response
-	 *
-	 * @throws Exception if exists an error in response 
-	 * 
-	 * @return void 
-	 **/
-	private function _CheckErrors($operation, $results)
-	{
-		$res = $results->{$operation.'Result'};
+        $this->_CheckErrors($operation, $results);
 
-		if ($operation == 'FECAESolicitar') {
-			if (isset($res->FeDetResp->FECAEDetResponse->Observaciones) && $res->FeDetResp->FECAEDetResponse->Resultado != 'A') {
-				$res->Errors = new StdClass();
-				$res->Errors->Err = $res->FeDetResp->FECAEDetResponse->Observaciones->Obs;
-			}
-		}
+        return $results->{$operation . 'Result'};
+    }
 
-		if (isset($res->Errors)) {
-			$err = is_array($res->Errors->Err) ? $res->Errors->Err[0] : $res->Errors->Err;
-			throw new Exception('('.$err->Code.') '.$err->Msg, $err->Code);
-		}
-	}
+    /**
+     * Make default request parameters for most of the operations
+     *
+     * @since 0.7
+     *
+     * @param string $operation SOAP Operation to do
+     *
+     * @return array Request parameters
+     **/
+    private function GetWSInitialRequest($operation)
+    {
+        if ($operation == 'FEDummy') {
+            return array();
+        }
 
+        $ta = $this->afip->GetServiceTA('wsfe');
+
+        return array(
+            'Auth' => array(
+                'Token' => $ta->token,
+                'Sign'  => $ta->sign,
+                'Cuit'  => $this->afip->CUIT
+                )
+        );
+    }
+
+    /**
+     * Check if occurs an error on Web Service request
+     *
+     * @since 0.7
+     *
+     * @param string    $operation  SOAP operation to check
+     * @param mixed     $results    AFIP response
+     *
+     * @throws Exception if exists an error in response
+     *
+     * @return void
+     **/
+    private function _CheckErrors($operation, $results)
+    {
+        $res = $results->{$operation . 'Result'};
+
+        if ($operation == 'FECAESolicitar') {
+            if (isset($res->FeDetResp->FECAEDetResponse->Observaciones) && $res->FeDetResp->FECAEDetResponse->Resultado != 'A') {
+                $res->Errors = new StdClass();
+                $res->Errors->Err = $res->FeDetResp->FECAEDetResponse->Observaciones->Obs;
+            }
+        }
+
+        if (isset($res->Errors)) {
+            $err = is_array($res->Errors->Err) ? $res->Errors->Err[0] : $res->Errors->Err;
+            throw new Exception('(' . $err->Code . ') ' . $err->Msg, $err->Code);
+        }
+    }
 }
-
