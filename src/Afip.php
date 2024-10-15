@@ -82,6 +82,7 @@ class Afip
     );
 
     private ElectronicBilling $electronicBilling;
+    private RegisterScopeThirteen $registerScopeThirteen;
 
     function __construct(
         $options
@@ -135,6 +136,9 @@ class Afip
 
         require_once __DIR__ . '/Class/ElectronicBilling.php';
         $this->electronicBilling = new ElectronicBilling($this);
+
+        require_once __DIR__ . '/Class/RegisterScopeThirteen.php';
+        $this->registerScopeThirteen = new RegisterScopeThirteen($this);
     }
 
     public function setData(string $cuit, string $certPath, string $keyPath): void
@@ -299,6 +303,11 @@ class Afip
     public function getElectronicBilling(): ElectronicBilling
     {
         return $this->electronicBilling;
+    }
+
+    public function getRegisterScopeThirteen(): RegisterScopeThirteen
+    {
+        return $this->registerScopeThirteen;
     }
 }
 
