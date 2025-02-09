@@ -320,6 +320,16 @@ class ElectronicBilling extends AfipWebService
     }
 
     /**
+     * Asks to AFIP Servers for customer tax types
+     *
+     * @return array All Customer tax types
+    **/
+    public function GetCustomerTaxTypes()
+    {
+        return $this->ExecuteRequest('FEParamGetCondicionIvaReceptor')->ResultGet->CondicionIvaReceptor;
+    }
+
+    /**
      * Change date from AFIP used format (yyyymmdd) to yyyy-mm-dd
      *
      * @since 0.7
