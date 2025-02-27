@@ -44,14 +44,14 @@ class RegisterScopeThirteen extends AfipWebService {
 	 * if it exists, returns persona property of response {@see 
 	 * WS Specification item 3.2.2}
 	**/
-	public function GetTaxpayerDetails($identifier)
+	public function GetTaxPayerDetails($identifier, $requesterCuit)
 	{
 		$ta = $this->afip->GetServiceTA('ws_sr_padron_a13');
 		
 		$params = array(
 			'token' 			=> $ta->token,
 			'sign' 				=> $ta->sign,
-			'cuitRepresentada' 	=> $this->afip->CUIT,
+			'cuitRepresentada' 	=> $requesterCuit,
 			'idPersona' 		=> $identifier
 		);
 
@@ -73,14 +73,14 @@ class RegisterScopeThirteen extends AfipWebService {
 	 * @return object|null if taxpayer does not exists, return null,  
 	 * if it exists, returns idPersona property of response
 	**/
-	public function GetTaxIDByDocument($documentNumber)
+	public function GetTaxIDByDocument($documentNumber, $requesterCuit)
 	{
 		$ta = $this->afip->GetServiceTA('ws_sr_padron_a13');
 		
 		$params = array(
 			'token' 			=> $ta->token,
 			'sign' 				=> $ta->sign,
-			'cuitRepresentada' 	=> $this->afip->CUIT,
+			'cuitRepresentada' 	=> $requesterCuit,
 			'documento' 		=> $documentNumber
 		);
 
