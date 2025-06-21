@@ -244,7 +244,7 @@ class Afip
             'location'       => $this->WSAA_URL,
             'trace'          => 1,
             'exceptions'     => $this->options['exceptions'],
-            'stream_context' => stream_context_create(['ssl' => ['ciphers' => 'AES256-SHA','verify_peer' => false,'verify_peer_name' => false]])
+            'stream_context' => stream_context_create(['ssl' => ['ciphers' => 'AES256-SHA','verify_peer' => true,'verify_peer_name' => true, 'cafile' => __DIR__ . '/cacert.pem']])
         ));
         $results = $client->loginCms(array('in0' => $CMS));
         if (is_soap_fault($results)) {
@@ -489,7 +489,7 @@ class AfipWebService
                 'location'       => $this->URL,
                 'trace'          => 1,
                 'exceptions'     => $this->afip->options['exceptions'],
-                'stream_context' => stream_context_create(['ssl' => ['ciphers' => 'AES256-SHA','verify_peer' => false,'verify_peer_name' => false]])
+                'stream_context' => stream_context_create(['ssl' => ['ciphers' => 'AES256-SHA','verify_peer' => true,'verify_peer_name' => true, 'cafile' => __DIR__ . '/cacert.pem']])
             ));
         }
 
